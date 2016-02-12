@@ -1,0 +1,22 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="info.nightscout.danarsync.MainActivity">
+
+    <item
+        android:id="@+id/action_readstatus"
+        android:title="@string/action_readstatus" />
+    <item
+        android:id="@+id/action_testhappconnectivity"
+        android:title="@string/action_testhappconnectivity" />
+    <item
+        android:id="@+id/action_preferences"
+        android:title="@string/action_preferences" />
+    <item
+        android:id="@+id/action_restartnsclient"
+        android:title="@string/action_restartnsclient" />
+<!--    <item
+        android:id="@+id/action_exit"
+        android:title="@string/action_exit" />
+-->
+</menu>

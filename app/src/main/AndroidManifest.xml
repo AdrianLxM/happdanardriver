@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.hypodiabetic.pumpdriverexample">
+    package="info.nightscout.happdanardriver">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:name=".MainApp"
+        android:name="info.nightscout.happdanardriver.MainApp"
         android:allowBackup="true"
+        android:process=":mainProcess"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
@@ -22,7 +35,7 @@
             android:name="AA_DB_VERSION"
             android:value="2" />
 
-        <activity android:name=".MainActivity">
+        <activity android:name="info.nightscout.happdanardriver.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -34,22 +47,62 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".AutoStart" >
+        <receiver android:name="info.nightscout.happdanardriver.AutoStart" >
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name="info.nightscout.danar.ReceiverKeepAlive"
+            android:process=":mainProcess">
+            <intent-filter>
+                <action android:name="info.nightscout.danar.ReceiverKeepAlive.action.PING" />
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="info.nightscout.danar.ReceiverBG"
+            android:exported="true"
+            android:process=":mainProcess">
+            <intent-filter>
+                <action android:name="danaR.action.BG_DATA" />
+            </intent-filter>
+        </receiver>
 
         <service
-            android:name=".IncomingService"
+            android:name="info.nightscout.happdanardriver.IncomingService"
             android:enabled="true"
             android:exported="true"
-            android:process=":incoming_service_process">
+            android:process=":mainProcess">
             <intent-filter>
-                <action android:name="com.hypodiabetic.pumpdriverexample.IncomingService">
+                <action android:name="info.nightscout.happdanardriver.IncomingService">
                 </action>
             </intent-filter>
         </service>
+        <service
+            android:name="info.nightscout.danar.ServiceConnection"
+            android:exported="false"
+            android:process=":mainProcess">
+            <intent-filter>
+                <action android:name="info.nightscout.danar.ServiceConnection" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="info.nightscout.danar.services.ServiceBG"
+            android:exported="false"
+            android:process=":mainProcess" />
+        <service
+            android:name="info.nightscout.danar.alarm.ServiceAlarm"
+            android:exported="false"
+            android:process=":mainProcess" />
+
+        <activity
+            android:name=".PreferencesActivity"
+            android:label="@string/title_activity_preferences"
+            android:parentActivityName=".MainActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="info.nightscout.happdanardriver.MainActivity" />
+        </activity>
 
     </application>
 

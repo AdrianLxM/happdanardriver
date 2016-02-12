@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:key="ns_api"
+        android:title="@string/ns_api_title">
+
+        <SwitchPreference
+            android:title="@string/ns_enable_title"
+            android:key="ns_enable"
+            android:disableDependentsState="false"
+            android:summary="">
+        </SwitchPreference>
+        <EditTextPreference
+            android:dependency="ns_enable"
+            android:title="@string/ns_url_title"
+            android:key="ns_url"
+            android:dialogTitle="@string/ns_url_dialogtitle"
+            android:dialogMessage="@string/ns_url_dialogmessage"
+            android:defaultValue="https://{YOUR-SITE}.azurewebsites.net/"
+            android:inputType="textUri">
+        </EditTextPreference>
+        <EditTextPreference
+            android:dependency="ns_enable"
+            android:title="@string/ns_api_secret_title"
+            android:key="ns_api_secret"
+            android:dialogTitle="@string/ns_api_secret_dialogtitle"
+            android:dialogMessage="@string/ns_api_secret_dialogmessage"
+            android:defaultValue=""
+            android:inputType="text">
+        </EditTextPreference>
+        <SwitchPreference
+            android:title="@string/ns_sync_profile"
+            android:key="ns_sync_profile"
+            android:disableDependentsState="false"
+            android:summary="">
+        </SwitchPreference>
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:key="safety"
+        android:title="@string/safety_title">
+
+        <EditTextPreference
+            android:title="@string/safety_bolusrate_title"
+            android:summary="@string/safety_bolusrate_summary"
+            android:key="safety_bolusrate"
+            android:dialogTitle="@string/safety_bolusrate_dialogtitle"
+            android:dialogMessage="@string/safety_bolusrate_dialogmessage"
+            android:defaultValue="60"
+            android:enabled="false"
+            android:numeric="decimal">
+        </EditTextPreference>
+        <EditTextPreference
+            android:title="@string/safety_basalrate_title"
+            android:summary="@string/safety_basalrate_summary"
+            android:key="safety_bolusrate"
+            android:dialogTitle="@string/safety_basalrate_dialogtitle"
+            android:dialogMessage="@string/safety_basalrate_dialogmessage"
+            android:defaultValue="1"
+            android:enabled="false"
+            android:numeric="decimal">
+        </EditTextPreference>
+    </PreferenceCategory>
+</PreferenceScreen>

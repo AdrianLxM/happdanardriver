@@ -7,14 +7,291 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.hypodiabetic.pumpdriverexample.MainActivity"
+    tools:context="info.nightscout.happdanardriver.MainActivity"
     android:orientation="vertical">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true">
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingRight="20dp"
+                android:text="Last connection:"
+                android:textSize="16dp"/>
+
+            <com.joanzapata.iconify.widget.IconTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical|right"
+                android:textSize="20dp"
+                android:id="@+id/lastconnclock"
+                />
+
+            <TextView
+                android:id="@+id/lastCheck"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:paddingRight="5dp"
+                android:text=""
+                android:gravity="center_vertical|right"
+                android:textSize="22dp"/>
+
+            <com.joanzapata.iconify.widget.IconTextView
+                android:id="@+id/batteryStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="0.47"
+                android:gravity="center_vertical|right"
+                android:text=""
+                android:textSize="22dp"/>
+
+
+            <com.joanzapata.iconify.widget.IconTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="1.02"
+                android:gravity="center_vertical|right"
+                android:text=""
+                android:textSize="20dp"
+                android:id="@+id/connection"
+                />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reservoir:"
+                android:textSize="16dp"/>
+
+            <TextView
+                android:id="@+id/uRemaining"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="1"
+                android:text=""
+                android:gravity="center_vertical|right"
+                android:textSize="22dp"/>
+
+        </LinearLayout>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TB:"
+                android:paddingRight="20dp"
+                android:textSize="16dp"/>
+
+            <TextView
+                android:id="@+id/currentBasal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:text=""
+                android:layout_weight="1"
+                android:gravity="center_vertical|right"
+                android:textSize="22dp"/>
+
+            <TextView
+                android:id="@+id/tempBasalRatio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:text=""
+                android:gravity="center_vertical|right"
+                android:layout_weight="1"
+                android:textSize="22dp"/>
+
+            <com.joanzapata.iconify.widget.IconTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical|right"
+                android:textSize="20dp"
+                android:id="@+id/tempBasalclock"
+                />
+
+            <TextView
+                android:id="@+id/tempBasalRemain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingRight="5dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical|right"
+                android:text=""
+                android:textSize="22dp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingRight="20dp"
+                android:text="Last bolus:"
+                android:id="@+id/textView"
+                android:textSize="16dp"/>
+
+            <com.joanzapata.iconify.widget.IconTextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical|right"
+                android:textSize="20dp"
+                android:id="@+id/lastbolusclock"
+                />
+
+            <TextView
+                android:id="@+id/lastBolusTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:paddingRight="5dp"
+                android:layout_weight="1"
+                android:text=""
+                android:textSize="22dp"/>
+
+            <TextView
+                android:id="@+id/lastBolusAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="0.62"
+                android:gravity="center_vertical|right"
+                android:text=""
+                android:textSize="22dp"/>
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingRight="20dp"
+                android:text="Bolusing:"
+                android:id="@+id/textView"
+                android:textSize="16dp"/>
+
+             <TextView
+                android:id="@+id/bolusingStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="0.62"
+                android:gravity="center_vertical|right"
+                android:text=""
+                android:textSize="22dp"/>
+
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingRight="20dp"
+                android:text="Extended:"
+                android:id="@+id/textView"
+                android:textSize="16dp"/>
+
+            <TextView
+                android:id="@+id/extendedBolusSoFar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="15dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="1"
+                android:text=""
+                android:textSize="22dp"/>
+
+           <TextView
+                android:id="@+id/extendedBolusAmount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:layout_weight="0.62"
+                android:gravity="center_vertical|right"
+                android:text=""
+                android:textSize="22dp"/>
+
+         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Nightcout connection:"
+                android:id="@+id/nsConnectionLabel"
+                android:textSize="16dp"/>
+
+            <TextView
+                android:id="@+id/nsConnection"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="3"
+                android:text="Not connected"
+                android:gravity="center_vertical|right"
+                android:textSize="16dp"/>
+
+        </LinearLayout>
+    </LinearLayout>
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Test Connectivity to HAPP"
-        android:onClick="sendMessage"/>
+        android:text="Test"
+        android:onClick="testBolus"/>
 
     <android.support.v4.view.ViewPager
         android:id="@+id/pager"
