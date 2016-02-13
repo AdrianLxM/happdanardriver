@@ -80,8 +80,8 @@ public class IncomingService extends android.app.Service {
 
                         Basal basal = new Basal();
                         basal.rate          =   basalSync.value1;
-                        basal.ratePercent   =   Integer.getInteger(basalSync.value2, 0);
-                        basal.duration      =   Integer.getInteger(basalSync.value3, 0);
+                        basal.ratePercent   =   Integer.parseInt(basalSync.value2);
+                        basal.duration      =   Integer.parseInt(basalSync.value3);
                         basal.start_time    =   basalSync.requested;
 
                         basal.action        =   basalSync.action;

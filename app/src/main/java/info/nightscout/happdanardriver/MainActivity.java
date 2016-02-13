@@ -361,7 +361,7 @@ public class MainActivity extends AppCompatActivity {
                     basalDate.setTime(basal.start_time);
 
                     basalItem.put("type", basal.action);
-                    basalItem.put("value", basal.rate + "U/h (" + basal.ratePercent + "%)");
+                    basalItem.put("value", basal.rate + "U/h (" + basal.ratePercent + "%) " + basal.duration + "mins");
                     basalItem.put("dateTime", sdfDateTime.format(basalDate.getTime()));
                     basalItem.put("state", "State:" + basal.state);
                     basalItem.put("delivered", "Set:" + basal.been_set);
