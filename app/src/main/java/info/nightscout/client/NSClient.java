@@ -6,6 +6,8 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 
+import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.UtilityModels.XDripEmulator;
 import com.google.common.base.Charsets;
 import com.google.common.hash.Hashing;
 import com.squareup.otto.Bus;
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import info.nightscout.client.acks.NSAck;
 import info.nightscout.client.acks.NSAuthAck;
 import info.nightscout.client.acks.NSPingAck;
+import info.nightscout.client.data.NSCal;
 import info.nightscout.client.data.NSSgv;
 import info.nightscout.client.data.NSTreatment;
 import info.nightscout.danar.DanaConnection;
@@ -196,11 +199,14 @@ public class NSClient {
         @Override
         public void call(final Object... args) {
             log.debug("NSCLIENT onDataUpdate");
+            SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
+            boolean emulatexDrip = SP.getBoolean("ns_emulate_xdrip", false);
             connectionStatus = "Data packet " + dataCounter++;
             mBus.post(new NSStatusEvent(connectionStatus));
 
             JSONObject data = (JSONObject) args[0];
             String activeProfile = MainApp.getNsActiveProfile();
+            NSCal actualCal = new NSCal();
             try {
                 // delta means only increment/changes are comming
                 boolean isDelta =  data.has("delta");
@@ -281,19 +287,28 @@ public class NSClient {
                     for (Integer index = 0; index < mbgs.length(); index++) {
                     }
                 }
+                if (data.has("cals")) {
+                    JSONArray cals = (JSONArray) data.getJSONArray("cals");
+                    log.debug("NSCLIENT received " + cals.length() + " cals");
+                    // Retreive actual calibration
+                    for (Integer index = 0; index < cals.length(); index++) {
+                        if (index ==0) {
+                            actualCal.set(cals.optJSONObject(index));
+                        }
+                    }
+                }
                 if (data.has("sgvs")) {
+                    XDripEmulator emulator = new XDripEmulator();
                     JSONArray sgvs = (JSONArray) data.getJSONArray("sgvs");
                     log.debug("NSCLIENT received " + sgvs.length() + " sgvs");
                     for (Integer index = 0; index < sgvs.length(); index++) {
                         // log.debug("NSCLIENT svg " + sgvs.getJSONObject(index).toString());
                         NSSgv sgv = new NSSgv(sgvs.getJSONObject(index));
                         // Handle new sgv here
-                    }
-                }
-                if (data.has("cals")) {
-                    JSONArray cals = (JSONArray) data.getJSONArray("cals");
-                    log.debug("NSCLIENT received " + cals.length() + " cals");
-                    for (Integer index = 0; index < cals.length(); index++) {
+                        if (emulatexDrip) {
+                            BgReading bgReading = new BgReading(sgv, actualCal);
+                            emulator.handleNewBgReading(bgReading, MainApp.instance().getApplicationContext());
+                        }
                     }
                 }
             } catch (JSONException e) {

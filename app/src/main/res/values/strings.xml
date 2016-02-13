@@ -21,6 +21,8 @@
     <string name="ns_api_secret_dialogtitle">Enter your Nightscout API_SECRET</string>
     <string name="ns_api_secret_dialogmessage">API_SECRET on the server should match yourpassphrase in this setting.</string>
     <string name="ns_sync_profile">Send active profile to pump</string>
+    <string name="ns_emulate_xdrip">Emulate xDrip</string>
+    <string name="ns_emulate_xdrip_summary">Send broadcasts based on incomming data from NS</string>
     <string name="safety_title">Safety</string>
     <string name="safety_bolusrate_title">Maximum bolus rate</string>
     <string name="safety_bolusrate_summary">Allow maximum 1 remote bolus per 60 min</string>
