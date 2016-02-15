@@ -7,7 +7,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.os.Handler;
@@ -17,7 +16,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.os.SystemClock;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -31,6 +29,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
@@ -45,6 +44,7 @@ import info.nightscout.danar.event.BolusingEvent;
 import info.nightscout.danar.event.CommandEvent;
 import info.nightscout.danar.event.ConnectionStatusEvent;
 import info.nightscout.danar.event.StatusEvent;
+import info.nightscout.danar.event.StopEvent;
 import info.nightscout.happdanardriver.Objects.Basal;
 import info.nightscout.happdanardriver.Objects.Treatment;
 
@@ -77,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static Logger log = LoggerFactory.getLogger(MainActivity.class);
 
+    private static DecimalFormat format2digits = new DecimalFormat("00");
     private static DecimalFormat formatNumber1place = new DecimalFormat("0.00");
     private static DateFormat formatDateToJustTime = new SimpleDateFormat("HH:mm");
 
@@ -85,8 +86,13 @@ public class MainActivity extends AppCompatActivity {
     TextView uRemaining;
     TextView batteryStatus;
     TextView tempBasalRatio;
+    TextView tempBasalAbs;
     TextView tempBasalRemain;
+    TextView tempBasalClock;
     TextView currentBasal;
+    LinearLayout linearTemp;
+    LinearLayout linearBolusing;
+    LinearLayout linearExtended;
 
     TextView extendedBolusAmount;
     TextView extendedBolusSoFar;
@@ -420,9 +426,24 @@ public class MainActivity extends AppCompatActivity {
             sendMessage();
             return true;
         }
-        if (id == R.id.action_restartnsclient) {
-            log.debug("Restart NS client");
-            MainApp.bus().post(new CommandEvent("RestartNSClient"));
+        if (id == R.id.action_restartservices) {
+            mHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    log.debug("Restart services");
+                    //MainApp.bus().post(new StopEvent());
+                    getApplicationContext().stopService(new Intent(getApplicationContext(), ServiceConnection.class));
+                    Object o = new Object();
+                    synchronized (o) {
+                        try {
+                            o.wait(5000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    getApplicationContext().startService(new Intent(getApplicationContext(), ServiceConnection.class));
+                }
+            });
             return true;
         }
 /*
@@ -445,13 +466,17 @@ public class MainActivity extends AppCompatActivity {
 
         ((TextView) findViewById(R.id.lastconnclock)).setText("{fa-clock-o}");
         ((TextView) findViewById(R.id.lastbolusclock)).setText("{fa-clock-o}");
-        ((TextView) findViewById(R.id.tempBasalclock)).setText("{fa-hourglass-o}");
 
         uRemaining = (TextView) findViewById(R.id.uRemaining);
         batteryStatus = (TextView) findViewById(R.id.batteryStatus);
         tempBasalRatio = (TextView) findViewById(R.id.tempBasalRatio);
+        tempBasalAbs = (TextView) findViewById(R.id.tempBasalAbs);
         currentBasal = (TextView) findViewById(R.id.currentBasal);
         tempBasalRemain = (TextView) findViewById(R.id.tempBasalRemain);
+        tempBasalClock = (TextView) findViewById(R.id.tempBasalclock);
+        linearTemp = (LinearLayout) findViewById(R.id.linearTemp);
+        linearBolusing = (LinearLayout) findViewById(R.id.linearBolusing);
+        linearExtended = (LinearLayout) findViewById(R.id.linearExtended);
 
         extendedBolusAmount =(TextView) findViewById(R.id.extendedBolusAmount);
         extendedBolusSoFar =(TextView) findViewById(R.id.extendedBolusSoFar);
@@ -524,23 +549,32 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
 
-                uRemaining.setText(formatNumber1place.format(ev.remainUnits) + "u");
+                lastCheck.setText(formatDateToJustTime.format(ev.timeLastSync));
+
+                uRemaining.setText(ev.remainUnits.intValue() + "u");
                 updateBatteryStatus(ev);
 
                 currentBasal.setText(formatNumber1place.format(ev.currentBasal) + "u/h");
-                tempBasalRemain.setText((ev.tempBasalRemainMin / 60) + ":" + ev.tempBasalRemainMin % 60);
 
                 lastBolusAmount.setText(formatNumber1place.format(ev.last_bolus_amount) + "u");
                 lastBolusTime.setText(formatDateToJustTime.format(ev.last_bolus_time));
 
-                extendedBolusAmount.setText(formatNumber1place.format(ev.statusBolusExtendedPlannedAmount) + "u");
-                extendedBolusSoFar.setText(ev.statusBolusExtendedDurationSoFarInMinutes + "of" + ev.statusBolusExtendedDurationInMinutes + "min");
-
-                lastCheck.setText(formatDateToJustTime.format(ev.timeLastSync));
-                if (ev.tempBasalRatio != -1) {
-                    tempBasalRatio.setText(ev.tempBasalRatio + "%");
+                if (ev.statusBolusExtendedInProgress) {
+                    linearExtended.setVisibility(LinearLayout.VISIBLE);
+                    extendedBolusAmount.setText(formatNumber1place.format(ev.statusBolusExtendedPlannedAmount) + "u");
+                    extendedBolusSoFar.setText(ev.statusBolusExtendedDurationSoFarInMinutes + "of" + ev.statusBolusExtendedDurationInMinutes + "min");
                 } else {
-                    tempBasalRatio.setText("100%");
+                    linearExtended.setVisibility(LinearLayout.GONE);
+                }
+
+                if (ev.tempBasalRatio != -1) {
+                    linearTemp.setVisibility(LinearLayout.VISIBLE);
+                    tempBasalRatio.setText(ev.tempBasalRatio + "%");
+                    tempBasalAbs.setText(formatNumber1place.format(ev.currentBasal * ev.tempBasalRatio / 100) + "u/h");
+                    tempBasalRemain.setText(format2digits.format(ev.tempBasalRemainMin / 60) + ":" + format2digits.format(ev.tempBasalRemainMin % 60));
+                    tempBasalClock.setText("{fa-hourglass-o}");
+                } else {
+                    linearTemp.setVisibility(LinearLayout.GONE);
                 }
 
                 if (MainApp.getNSClient() != null) MainApp.getNSClient().sendStatus(ev, mBTStatus);
@@ -553,8 +587,12 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
-                bolusingStatus.setText(ev.sStatus);
+                if (ev.sStatus.equals("")) {
+                    linearBolusing.setVisibility(LinearLayout.GONE);
+                } else {
+                    linearBolusing.setVisibility(LinearLayout.VISIBLE);
+                    bolusingStatus.setText(ev.sStatus);
+                }
             }
         });
     }
@@ -594,7 +632,7 @@ public class MainActivity extends AppCompatActivity {
         DanaConnection dc = MainApp.getDanaConnection();
         dc.connectIfNotConnected("testBolus");
         try {
-            dc.bolus(1D,"aaa");
+            dc.bolusFromHAPP(1D,"aaa");
         } catch (Exception e) {
             e.printStackTrace();
         }

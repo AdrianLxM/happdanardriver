@@ -348,38 +348,80 @@ public class DanaConnection {
     }
 
     public Result setTempBasalFromHAPP(final Basal basal) {
-        SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
+        final SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
         final Result result = new Result();
         final StatusEvent ev = StatusEvent.getInstance();
 
         if (!isConnectionEnabled()) {
             result.result = false;
             result.comment = "Pump connection disabled";
+            log.debug("setTempBasalFromHAPP: Pump connection disabled");
             return result;
         }
         Thread temp = new Thread() {
             public void run() {
+                log.debug("setTempBasalFromHAPP: " + basal.ratePercent + "% " + basal.rate + "u/h " + basal.duration + " minutes");
+                if (basal.ratePercent == 100) {
+                    cancelTempBasalFromHAPP();
+                    return;
+                }
+                // Load statuses from pump
                 connectIfNotConnected("setTempBasalFromHAPP");
+                // Query temp basal
                 MsgStatusTempBasal statusMsg = new MsgStatusTempBasal();
                 mSerialEngine.sendMessage(statusMsg);
+                // Query extended bolus
                 MsgStatusBolusExtended exStatusMsg = new MsgStatusBolusExtended();
                 mSerialEngine.sendMessage(exStatusMsg);
+                if (!statusMsg.received) {
+                    // Load of status of current basal rate failed, give one more try
+                    mSerialEngine.sendMessage(exStatusMsg);
+                }
+                if (!exStatusMsg.received) {
+                    // Load of status of current extended bolus failed, give one more try
+                    mSerialEngine.sendMessage(statusMsg);
+                }
 
+                // Check we have really current status of pump
+                if (!statusMsg.received || !exStatusMsg.received) {
+                    // Refuse any action because we don't know status of pump
+                    result.result = false;
+                    result.comment = "Unable to retreive pump status";
+                    pingStatus();
+                    log.debug("setTempBasalFromHAPP: Unable to retreive pump status");
+                    return;
+                }
+                // Get max basal rate in settings (by default harcoded to 400)
+                Integer maxBasalRate = SP.getInt("safety_maxbasalrate",400);
+                // Check percentRate but absolute rate too, because we know real current basal in pump
+                if (basal.ratePercent > maxBasalRate || basal.rate > ev.currentBasal * maxBasalRate / 100d) {
+                    result.result = false;
+                    result.comment = "Basal rate exceeds allowed limit";
+                    pingStatus();
+                    log.debug("setTempBasalFromHAPP: Basal rate exceeds allowed limit ratePercent: " + basal.ratePercent + " rate: " + basal.rate + " currentBasal: " + ev.currentBasal + " limit: " + maxBasalRate);
+                    return;
+                }
+
+                // Temp basals under 100% are processed as temp basals in pump
                 if (basal.ratePercent <= 100) {
-                    // Query temp basal status
+                    // Check if some temp is already in progress
                     if (ev.tempBasalInProgress == 1) {
+                        // Correct basal already set ?
                         if (ev.tempBasalRatio == basal.ratePercent) {
-                            // correct basal already set
                             result.result = true;
                             pingStatus();
+                            log.debug("setTempBasalFromHAPP: <100% correct basal already set");
                             return;
                         } else {
                             MsgTempBasalStop msgStop = new MsgTempBasalStop();
                             mSerialEngine.sendMessage(msgStop);
-                            if (msgStop.failed) {
+                            log.debug("setTempBasalFromHAPP: <100% stopping basal");
+                            // Check for proper result
+                            if (msgStop.failed || !msgStop.received) {
                                 result.result = false;
                                 result.comment = "Failed to stop previous temp basal";
                                 pingStatus();
+                                log.debug("setTempBasalFromHAPP: <100% failed to stop previous basal");
                                 return;
                             }
                         }
@@ -387,60 +429,90 @@ public class DanaConnection {
                     if (ev.statusBolusExtendedInProgress) {
                         MsgExtendedBolusStop msgExStop = new MsgExtendedBolusStop();
                         mSerialEngine.sendMessage(msgExStop);
+                        log.debug("setTempBasalFromHAPP: <100% stopping extended bolus");
+                        // Check for proper result
+                        if (msgExStop.failed || !msgExStop.received) {
+                            result.result = false;
+                            result.comment = "Failed to stop previous extended bolus";
+                            pingStatus();
+                            log.debug("setTempBasalFromHAPP: <100% failed to stop previous extended bolus");
+                            return;
+                        }
                     }
+                    // Convert duration from minutes to hours
                     Integer duration = (int) Math.ceil(basal.duration / 60.0);
-                    MsgTempBasalStart msg = new MsgTempBasalStart(basal.ratePercent, duration);
-                    mSerialEngine.sendMessage(msg);
-                    if (msg.failed) {
+                    MsgTempBasalStart msgTempStart = new MsgTempBasalStart(basal.ratePercent, duration);
+                    mSerialEngine.sendMessage(msgTempStart);
+                    log.debug("setTempBasalFromHAPP: <100% setting temp "+ basal.ratePercent + "% for " + duration + " hours");
+                    if (msgTempStart.failed || !msgTempStart.received) {
                         result.result = false;
                         result.comment = "Failed to set temp basal";
                         pingStatus();
+                        log.debug("setTempBasalFromHAPP: <100% failed to set temp basal");
                         return;
                     }
                     result.result = true;
                     pingStatus();
+                    log.debug("setTempBasalFromHAPP: basal set ok");
                     return;
 
                 } else {
+                    // Temp basal >100% are treated as extended boluses
+                    // Calculate # of halfHours from minutes
                     Integer halfHours = (int) Math.floor(basal.duration/30);
+                    // We keep current basal running so need to sub current basal
                     Double rate = basal.rate - ev.currentBasal;
-                    Double rateInProgress = ev.statusBolusExtendedInProgress ? ev.statusBolusExtendedPlannedAmount * ev.statusBolusExtendedDurationInMinutes / 60 : 0D;
+                    // What is current rate of extended bolusing in u/h?
+                    Double rateInProgress = ev.statusBolusExtendedInProgress ? ev.statusBolusExtendedPlannedAmount / ev.statusBolusExtendedDurationInMinutes * 60 : 0d;
+                    log.debug("setTempBasalFromHAPP: >100% extended in progess: "+ ev.statusBolusExtendedInProgress + " amount: " + ev.statusBolusExtendedPlannedAmount +  "u duration: " + ev.statusBolusExtendedDurationInMinutes + "min");
+                    log.debug("setTempBasalFromHAPP: >100% current rate: "+ ev.currentBasal + "u/h  rate to set: " + rate +  "u/h extended rate in progress: " + rateInProgress + "u/h");
 
-                    if (Math.abs(rateInProgress - rate) < 0.02D) {
+                    // Compare with extended rate in progress
+                    if (Math.abs(rateInProgress - rate) < 0.02D) { // Allow some rounding diff
                         // correct extended already set
                         result.result = true;
                         pingStatus();
+                        log.debug("setTempBasalFromHAPP: >100% correct basal already set");
                         return;
                     }
-                    // Stop normal temp
+                    // Stop normal temp if needed because we calculate with 100% of basal rate
                     if (ev.tempBasalInProgress == 1) {
                         MsgTempBasalStop msgStop1 = new MsgTempBasalStop();
                         mSerialEngine.sendMessage(msgStop1);
-                        if (msgStop1.failed) {
+                        log.debug("setTempBasalFromHAPP: >100% stopping basal");
+                        if (msgStop1.failed ||  !msgStop1.received) {
+                            // If something goes wrong try to stop extened too
                             MsgExtendedBolusStop msgStop2 = new MsgExtendedBolusStop();
                             mSerialEngine.sendMessage(msgStop2);
                             result.result = false;
                             result.comment = "Failed to stop previous temp basal";
                             pingStatus();
+                            log.debug("setTempBasalFromHAPP: >100% failed to stop basal");
                             return;
                         }
                     }
 
-                    MsgExtendedBolusStart msg = new MsgExtendedBolusStart(rate / halfHours * 2, (byte) (halfHours & 0xFF));
-                    mSerialEngine.sendMessage(msg);
-                    if (msg.failed) {
+                    // Now set new extended, no need to to stop previous (if running) because it's replaced
+                    MsgExtendedBolusStart msgStartExt = new MsgExtendedBolusStart(rate / 2 * halfHours, (byte) (halfHours & 0xFF));
+                    mSerialEngine.sendMessage(msgStartExt);
+                    log.debug("setTempBasalFromHAPP: >100% setting extended: " + (rate / 2 * halfHours) + "u  halfhours: " + (halfHours & 0xFF));
+                    if (msgStartExt.failed || !msgStartExt.received) {
                         result.result = false;
                         result.comment = "Failed to set extended bolus";
                         pingStatus();
+                        log.debug("setTempBasalFromHAPP: >100% failed to set extended");
                         return;
                     }
                     result.result = true;
                     pingStatus();
+                    log.debug("setTempBasalFromHAPP: >100% extended set ok");
                     return;
                 }
             }
         };
+        // Run everything in separate thread to not block UI
         temp.start();
+        // and wait for thread finish
         try {
             temp.join();
         } catch (InterruptedException e) {
@@ -453,36 +525,48 @@ public class DanaConnection {
         SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
         final StatusEvent ev = StatusEvent.getInstance();
         final Result result = new Result();
+        log.debug("cancelTempBasalFromHAPP: enter");
 
         if (!isConnectionEnabled()) {
             result.result = false;
             result.comment = "Pump connection disabled";
+            log.debug("cancelTempBasalFromHAPP: Pump connection disabled");
             return result;
         }
         Thread temp = new Thread() {
             public void run() {
                 connectIfNotConnected("cancelTempBasalFromHAPP");
-                // Query temp basal status
-                MsgStatusTempBasal statusMsg = new MsgStatusTempBasal();
-                mSerialEngine.sendMessage(statusMsg);
-                if (ev.tempBasalInProgress == 1) {
-                    MsgTempBasalStop msgStop = new MsgTempBasalStop();
-                    mSerialEngine.sendMessage(msgStop);
-                    if (msgStop.failed) {
-                        result.result = false;
-                        result.comment = "Failed to stop previous temp basal";
-                        return;
-                    }
-                }
                 // Query extended bolus status
                 MsgStatusBolusExtended exStatusMsg = new MsgStatusBolusExtended();
                 mSerialEngine.sendMessage(exStatusMsg);
-                if (ev.statusBolusExtendedInProgress) {
+                if (exStatusMsg.failed || !exStatusMsg.received) {
+                    // Give one more try
+                    mSerialEngine.sendMessage(exStatusMsg);
+                }
+                // If extended in progress or failed read status send cancel extended message
+                if (ev.statusBolusExtendedInProgress || exStatusMsg.failed || !exStatusMsg.received) {
                     MsgExtendedBolusStop msgStop = new MsgExtendedBolusStop();
                     mSerialEngine.sendMessage(msgStop);
-                    if (msgStop.failed) {
+                    if (msgStop.failed || !msgStop.received) {
                         result.result = false;
                         result.comment = "Failed to stop previous extended bolus";
+                        return;
+                    }
+                }
+                // Query temp basal status
+                MsgStatusTempBasal statusMsg = new MsgStatusTempBasal();
+                mSerialEngine.sendMessage(statusMsg);
+                if (statusMsg.failed || !statusMsg.received) {
+                    // Give one more try
+                    mSerialEngine.sendMessage(statusMsg);
+                }
+                // If temp in progress or failed read status send cancel temp message
+                if (ev.tempBasalInProgress == 1 || statusMsg.failed || !statusMsg.received) {
+                    MsgTempBasalStop msgStop = new MsgTempBasalStop();
+                    mSerialEngine.sendMessage(msgStop);
+                    if (msgStop.failed || !msgStop.received) {
+                        result.result = false;
+                        result.comment = "Failed to stop previous temp basal";
                         return;
                     }
                 }
@@ -491,7 +575,9 @@ public class DanaConnection {
                 return;
             }
         };
+        // Run the thread
         temp.start();
+        // Wait for finish
         try {
             temp.join();
         } catch (InterruptedException e) {
@@ -539,12 +625,15 @@ public class DanaConnection {
         if(mSerialEngine!=null) mSerialEngine.stopIt();
     }
 
-    public Result bolus(final double amount, final String _id) throws Exception {
-        log.info("bolus start " + amount);
+    public Result bolusFromHAPP(final double amount, final String _id) {
+        log.debug("bolusFromHAPP: bolus start " + amount + " _id: " + _id);
+        final SharedPreferences SP = PreferenceManager.getDefaultSharedPreferences(MainApp.instance().getApplicationContext());
+        final StatusEvent ev = StatusEvent.getInstance();
         final Result result = new Result();
         final BolusingEvent bolusingEvent = BolusingEvent.getInstance();
 
         if (!isConnectionEnabled()) {
+            log.debug("bolusFromHAPP: Pump connection disabled");
             result.result = false;
             result.comment = "Pump connection disabled";
             return result;
@@ -552,6 +641,28 @@ public class DanaConnection {
         Thread bolus = new Thread() {
             public void run() {
                 connectIfNotConnected("bolus");
+                // Request last bolus status
+                MsgStatus msgStatus = new MsgStatus();
+                mSerialEngine.sendMessage(msgStatus);
+                if (!msgStatus.received) {
+                    // If failed give on more try
+                    mSerialEngine.sendMessage(msgStatus);
+                }
+                // Check if we have latest data
+                if (!msgStatus.received) {
+                    log.debug("bolusFromHAPP: Failed to read bolus status");
+                    result.result = false;
+                    result.comment = "Failed to read bolus status";
+                    return;
+                }
+                Integer maxBolusRate = SP.getInt("safety_maxbolusrate", 60);
+                Double minsFromLastBolus = ((new java.util.Date()).getTime() - ev.last_bolus_time.getTime()) / 1000d / 60;
+                if ( minsFromLastBolus < maxBolusRate) {
+                    log.debug("bolusFromHAPP: Max bolus ratio exceeded maxBolusRate: " + maxBolusRate + " minsFromLastBolus: " + minsFromLastBolus);
+                    result.result = false;
+                    result.comment = "Max bolus ratio exceeded";
+                    return;
+                }
                 MsgBolusStart msg = new MsgBolusStart(amount, _id);
                 MsgBolusProgress progress = new MsgBolusProgress(mBus, amount, _id);
                 MsgBolusStop stop = new MsgBolusStop(mBus, _id);
@@ -571,13 +682,21 @@ public class DanaConnection {
                 mBus.post(bolusingEvent);
 
                 if (progress.progress != 0) {
+                    log.debug("bolusFromHAPP: Failed to send bolus");
                     result.result = false;
                     result.comment = "Failed to send bolus";
-                } else result.result = true;
+                } else {
+                    log.debug("bolusFromHAPP: Result OK");
+                    result.result = true;
+                }
             };
         };
         bolus.start();
-        bolus.join();
+        try {
+            bolus.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         pingStatus();
         bolusingEvent.sStatus = "";
         mBus.post(bolusingEvent);

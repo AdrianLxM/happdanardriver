@@ -21,6 +21,7 @@ public class MsgExtendedBolusStop extends DanaRMessage {
     }
 
     public void handleMessage(byte[] bytes) {
+        received = true;
         int result = DanaRMessages.byteArrayToInt(bytes, 0, 1);
         log.info("MsgExtendedBolusStop result " + result);
         if(result!=1) {

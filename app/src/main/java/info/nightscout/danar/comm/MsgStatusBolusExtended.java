@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 public class MsgStatusBolusExtended extends DanaRMessage {
     private static Logger log = LoggerFactory.getLogger(MsgStatusBolusExtended.class);
-    public boolean received = false;
 
     public MsgStatusBolusExtended() {
         super("CMD_PUMP_EXPANS_INS_I");

@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.google.gson.reflect.TypeToken;
@@ -154,7 +153,7 @@ public class IncomingService extends android.app.Service {
 
                 } else {                                                                            //Pump is online and available to accept a treatment
                     try {
-                        Result result = dc.bolus(treatment.value, ""); // NS _id here
+                        Result result = dc.bolusFromHAPP(treatment.value, ""); // NS _id here
                         if (result.result) {
                             treatment.state         = "delivered";
                             treatment.details       = "Treatment has been sent to the pump";

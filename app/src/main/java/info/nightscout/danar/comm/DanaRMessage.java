@@ -18,6 +18,7 @@ public class DanaRMessage {
     private byte cursorW = (byte) 6;
 
     public int responses = 1;
+    public boolean received = false;
 
     public boolean failed = false;
 

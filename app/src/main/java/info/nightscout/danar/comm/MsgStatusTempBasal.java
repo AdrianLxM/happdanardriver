@@ -10,7 +10,6 @@ import java.util.Date;
 
 public class MsgStatusTempBasal extends DanaRMessage {
     private static Logger log = LoggerFactory.getLogger(MsgStatusTempBasal.class);
-    public boolean received = false;
 
     public MsgStatusTempBasal() {
         super("CMD_PUMP_EXERCISE_MODE");

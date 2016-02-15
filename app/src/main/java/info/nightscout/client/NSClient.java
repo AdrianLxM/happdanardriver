@@ -72,6 +72,7 @@ public class NSClient {
     private ScheduledFuture<?> mOutgoingStatus = null;
 
     public NSClient(Bus bus) {
+        log.debug("NSCLIENT start");
         MainApp.setNSClient(this);
         mBus = bus;
 
@@ -126,9 +127,10 @@ public class NSClient {
     }
 
     public void destroy() {
-        log.debug("NSCLIENT disconnect");
+        log.debug("NSCLIENT destroy");
         mPingHandler.removeCallbacks(mPingRunnable);
         mSocket.disconnect();
+        MainApp.setNSClient(null);
     }
 
     private void sendAuthMessage(NSAuthAck ack) {

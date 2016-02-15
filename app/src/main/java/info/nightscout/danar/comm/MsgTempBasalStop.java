@@ -17,6 +17,7 @@ public class MsgTempBasalStop extends DanaRMessage {
     }
 
     public void handleMessage(byte[] bytes) {
+        received = true;
         int result = DanaRMessages.byteArrayToInt(bytes, 0, 1);
         if(result!=1) {
             failed = true;

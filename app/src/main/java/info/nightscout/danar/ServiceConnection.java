@@ -81,16 +81,6 @@ public class ServiceConnection extends Service {
         MainApp.bus().register(this);
     }
 
-    @Subscribe
-    public void onStatusEvent(final CommandEvent ev) {
-        if (ev.sCommand == "RestartNSClient") {
-            if (MainApp.getNSClient() != null) {
-                MainApp.getNSClient().destroy();
-            }
-            MainApp.setNSClient(new NSClient(MainApp.bus()));
-        }
-    }
-
     private void enableForeground() {
         mNotificationCompatBuilder = new NotificationCompat.Builder(getApplicationContext());
         mNotificationCompatBuilder.setContentTitle("HAPP DanaR driver")
@@ -148,6 +138,9 @@ public class ServiceConnection extends Service {
     public void onStopEvent(StopEvent event) {
         log.debug("onStopEvent received");
         mDanaConnection.stop();
+        if (mNSClient != null) {
+            mNSClient.destroy();
+        }
 
         stopForeground(true);
         stopSelf();

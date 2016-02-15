@@ -29,6 +29,7 @@ public class MsgStatus extends DanaRMessage {
     }
 
     public void handleMessage(byte[] bytes) {
+        received = true;
         int daily_total = DanaRMessages.byteArrayToInt(bytes, 0, 3);
         Date last_bolus_time  =
                 new Date(

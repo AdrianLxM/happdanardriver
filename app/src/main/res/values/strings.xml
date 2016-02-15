@@ -5,7 +5,7 @@
     <string name="action_preferences">Preferences</string>
     <string name="action_readstatus">Read status</string>
     <string name="action_testhappconnectivity">Test HAPP connectivity</string>
-    <string name="action_restartnsclient">Restart NS client</string>
+    <string name="action_restartservices">Restart service</string>
     <string name="action_exit">Exit</string>
 
     <string name="title_activity_preferences">Preferences</string>
@@ -29,8 +29,9 @@
     <string name="safety_bolusrate_dialogtitle">Max bolus rate</string>
     <string name="safety_bolusrate_dialogmessage">Enter value in minutes</string>
     <string name="safety_basalrate_title">Maximum temp basal rate</string>
-    <string name="safety_basalrate_summary">Maximum allowed temporary basal rate 1U/h</string>
+    <string name="safety_basalrate_summary">Maximum allowed temporary basal rate 400%</string>
     <string name="safety_basalrate_dialogtitle">Maximum temp basal rate</string>
-    <string name="safety_basalrate_dialogmessage">Enter value in U/h</string>
+    <string name="safety_basalrate_dialogmessage">Enter value in %</string>
+
 
 </resources>

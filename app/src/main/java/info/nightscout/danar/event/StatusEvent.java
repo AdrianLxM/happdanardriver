@@ -17,7 +17,7 @@ public class StatusEvent {
 
     private static StatusEvent statusEvent = null;
 
-    public double remainUnits = 0;
+    public Double remainUnits = 0d;
     public int remainBattery = 0;
 
     public int tempBasalInProgress = 0;
